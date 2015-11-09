@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="vertical_gully">16dp</dimen>
+    <dimen name="horizontal_inner_gully">12dp</dimen>
+    <dimen name="horizontal_gully">12dp</dimen>
+    <dimen name="vertical_gully_small">12dp</dimen>
+    <dimen name="horizontal_gully_small">12dp</dimen>
+    <dimen name="horizontal_screen_edge">8dp</dimen>
+    <dimen name="vertical_screen_edge">8dp</dimen>
+</resources>

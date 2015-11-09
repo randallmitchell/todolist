@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Todo List</string>
+    <string name="item_list_date_format">MMM d</string>
+    <string name="new_item_dialog_title">Create New Item</string>
+    <string name="new_item_dialog_text_input_hint">Description</string>
+    <string name="new_item_dialog_positive_button">Create</string>
+    <string name="new_item_dialog_negative_button">Cancel</string>
+</resources>

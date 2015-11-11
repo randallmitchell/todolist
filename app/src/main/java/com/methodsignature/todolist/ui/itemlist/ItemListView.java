@@ -125,7 +125,7 @@ public class ItemListView extends RecyclerView {
             outRect.bottom = space;
 
             // Add top margin only for the first item to avoid double space between items
-            if(parent.getChildPosition(view) == 0)
+            if(parent.getChildLayoutPosition(view) == 0)
                 outRect.top = space;
         }
     }

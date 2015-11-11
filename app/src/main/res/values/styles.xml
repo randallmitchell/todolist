@@ -18,4 +18,8 @@
         <item name="android:textStyle">normal</item>
     </style>
 
+    <style name="Overlay">
+        <item name="android:background">@color/colorPrimary</item>
+    </style>
+
 </resources>

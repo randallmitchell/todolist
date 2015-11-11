@@ -1,26 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:animateLayoutChanges="true">
 
-    <com.methodsignature.todolist.ui.itemlist.ItemListView
-        android:id="@+id/item_list_list_view"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginLeft="@dimen/vertical_screen_edge"
-        android:layout_marginRight="@dimen/vertical_screen_edge"
-        android:layout_marginTop="@dimen/horizontal_screen_edge"
-        android:layout_marginBottom="@dimen/horizontal_screen_edge"/>
+        android:layout_above="@+id/item_list_google_sign_in_button_container">
 
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/item_list_floating_action_button"
-        android:layout_width="wrap_content"
+        <com.methodsignature.todolist.ui.itemlist.ItemListView
+            android:id="@+id/item_list_list_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="@dimen/vertical_screen_edge"
+            android:layout_marginRight="@dimen/vertical_screen_edge"
+            android:layout_marginTop="@dimen/horizontal_screen_edge"/>
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/item_list_floating_action_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_add_white_24dp"
+            android:elevation="@dimen/vertical_gully"
+            android:layout_gravity="bottom|right"
+            android:layout_marginBottom="@dimen/vertical_gully"
+            android:layout_marginRight="@dimen/horizontal_gully"
+            app:layout_behavior="com.methodsignature.todolist.ui.itementry.ListItemFabBehavior"/>
+
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@id/item_list_google_sign_in_button_container"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:src="@drawable/ic_add_white_24dp"
-        android:elevation="@dimen/vertical_gully"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_marginBottom="@dimen/vertical_gully"
-        android:layout_marginRight="@dimen/horizontal_gully" />
+        android:paddingTop="@dimen/vertical_screen_edge"
+        android:paddingBottom="@dimen/vertical_screen_edge"
+        android:paddingLeft="@dimen/horizontal_screen_edge"
+        android:paddingRight="@dimen/horizontal_screen_edge"
+        android:visibility="gone"
+        style="@style/Overlay">
+
+        <com.google.android.gms.common.SignInButton
+            android:id="@+id/item_list_google_sign_in_button"
+            android:layout_gravity="center_horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </FrameLayout>
 </RelativeLayout>

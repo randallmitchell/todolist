@@ -56,10 +56,10 @@ public interface ItemsRepository {
     /**
      * Puts an item in the repository.  If an existing repository item has the same id, it will
      * be replaced.
-     * @param item
+     * @param itemText
      * @param listener
      */
-    void setItem(Item item, SetItemListener listener);
+    void setItem(String itemText, SetItemListener listener);
 
     /**
      * Cancels a request for setting an item to the reposiotyr.  Not guaraneet to prevent request

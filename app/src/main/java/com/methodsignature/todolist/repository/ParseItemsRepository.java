@@ -214,7 +214,12 @@ public class ParseItemsRepository implements ItemsRepository {
     }
 
     @Override
-    public void setItem(Item item, SetItemListener listener) {
+    public void setItem(String itemText, SetItemListener listener) {
+        Item item = new Item.Builder()
+                .text(itemText)
+                .isComplete(false)
+                .build();
+
         synchronized (setItemRequestLock) {
             Item itemToSave;
             if (TextUtils.isEmpty(item.getId())) {

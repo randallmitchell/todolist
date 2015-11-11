@@ -41,4 +41,7 @@ dependencies {
     // parse
     compile 'com.parse.bolts:bolts-android:1.2.1'
     compile 'com.parse:parse-android:1.10.3'
+
+    // google sign-in support
+    compile 'com.google.android.gms:play-services-auth:8.3.0'
 }

@@ -13,6 +13,7 @@ import com.methodsignature.todolist.parse.ParseInitializer;
 import com.methodsignature.todolist.parse.data.ParseItem;
 import com.methodsignature.todolist.repository.exception.DeleteItemException;
 import com.methodsignature.todolist.repository.exception.ItemException;
+import com.methodsignature.todolist.repository.exception.ItemsException;
 import com.methodsignature.todolist.repository.listener.DeleteItemListener;
 import com.methodsignature.todolist.repository.listener.ItemListener;
 import com.methodsignature.todolist.repository.listener.ItemsListener;
@@ -127,11 +128,15 @@ public class ParseItemsRepository implements ItemsRepository {
             query.findInBackground(new FindCallback<ParseItem>() {
                 @Override
                 public void done(List<ParseItem> list, ParseException e) {
-                    ImmutableList.Builder<Item> builder = new ImmutableList.Builder<Item>();
-                    for (ParseItem item:list) {
-                        builder.add(item.toItem());
+                    if (list != null) {
+                        ImmutableList.Builder<Item> builder = new ImmutableList.Builder<Item>();
+                        for (ParseItem item:list) {
+                            builder.add(item.toItem());
+                        }
+                        handleItems(builder.build());
+                    } else {
+                        handleItemsException(e);
                     }
-                    handleItems(builder.build());
                 }
             });
 
@@ -143,6 +148,16 @@ public class ParseItemsRepository implements ItemsRepository {
             this.items.addAll(items);
             for (int i=0; i<itemsListeners.size(); i++) {
                 itemsListeners.get(i).onAllItems(items);
+            }
+            itemsListeners.clear();
+        }
+    }
+
+    private void handleItemsException(ParseException e) {
+        synchronized (itemsRequestLock) {
+            this.items.addAll(items);
+            for (int i=0; i<itemsListeners.size(); i++) {
+                itemsListeners.get(i).onException(new ItemsException(e.getMessage()));
             }
             itemsListeners.clear();
         }

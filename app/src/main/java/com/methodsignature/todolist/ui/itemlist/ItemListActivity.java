@@ -31,11 +31,10 @@ public class ItemListActivity extends BaseActivity {
 
     private static final Logger LOGGER = new Logger(ItemListActivity.class);
 
-    ItemListComponent itemListComponent;
-
     private ItemsRepository itemsRepository;
 
     private ItemListView itemListView;
+    private View signInButton;
 
     private NewItemDialogManager newItemDialogManager;
 
@@ -48,38 +47,47 @@ public class ItemListActivity extends BaseActivity {
     public void onCreate(Bundle savedInstanceState) {
         LOGGER.v("[onCreate]");
         super.onCreate(savedInstanceState);
+        initializeView();
+        resolveDependencies();
+        initializeNewItemSupport();
+        initializeSignInSupport();
+    }
 
+    private void initializeView() {
         setContentView(R.layout.item_list_activity);
         itemListView = (ItemListView) findViewById(R.id.item_list_list_view);
         signInButtonContainer = findViewById(R.id.item_list_sign_in_button_container);
+        signInButton = findViewById(R.id.item_list_sign_in_button);
+    }
 
-        TodoListApplication app = (TodoListApplication) getApplication();
-        ApplicationComponent applicationComponent = app.getApplicationComponent();
-        itemsRepository = applicationComponent.itemsRepository();
+    public void resolveDependencies() {
+        ApplicationComponent applicationComponent =
+                ((TodoListApplication) getApplication()).getApplicationComponent();
+        ItemListComponent itemListComponent = DaggerItemListComponent.builder()
+                .applicationComponent(applicationComponent)
+                .newItemDialogModule(new NewItemDialogModule())
+                .build();
 
-        itemListComponent = DaggerItemListComponent.builder()
-            .applicationComponent(applicationComponent)
-            .newItemDialogModule(new NewItemDialogModule())
-            .build();
-        initializeNewItemSupport(itemListComponent);
-
-        initializeSignInSupport(itemListComponent);
+        itemsRepository = itemListComponent.itemsRepository();
+        authenticationAgent = itemListComponent.authenticationAgent();
+        signOutOptionsMenuHandler = itemListComponent.signOutOptionsMenuHandler();
+        newItemDialogManager = itemListComponent.itemDialogManager();
     }
 
     @Override
     protected void onStart() {
         LOGGER.v("[onStart]");
         super.onStart();
-        startItemsRequest();
         if (authenticationAgent.shouldAutoLogin(this)) {
             authenticationAgent.authenticate(this);
         } else {
             if (authenticationAgent.isAuthenticated()) {
-                setViewState(new ViewState(ViewState.STATE_LOGGED_IN));
+                setViewState(new ViewState(ViewState.LOGGED_IN));
             } else {
-                setViewState(new ViewState(ViewState.STATE_LOGGED_OUT));
+                setViewState(new ViewState(ViewState.LOGGED_OUT));
             }
         }
+        startItemsRequest();
     }
 
     @Override
@@ -92,9 +100,8 @@ public class ItemListActivity extends BaseActivity {
         itemListView.setItems(allItems);
     }
 
-    private void initializeNewItemSupport(ItemListComponent itemListComponent) {
+    private void initializeNewItemSupport() {
         LOGGER.v("[initializeNewItemSupport]");
-        newItemDialogManager = itemListComponent.itemDialogManager();
         newItemDialogManager.setListener(new NewItemDialogManager.Listener() {
             @Override
             public void onDialogResult(String newItemText) {
@@ -103,7 +110,7 @@ public class ItemListActivity extends BaseActivity {
 
             @Override
             public void onDialogCancelled() {
-                handleDialogCancelled();
+                // ok to ignore
             }
         });
 
@@ -111,14 +118,9 @@ public class ItemListActivity extends BaseActivity {
         fabView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                handleFabClick();
+                newItemDialogManager.showDialog(getSupportFragmentManager());
             }
         });
-
-    }
-
-    private void handleNewItemSaved(Item item) {
-        itemListView.addItem(item);
     }
 
     private void startItemsRequest() {
@@ -136,10 +138,6 @@ public class ItemListActivity extends BaseActivity {
         });
     }
 
-    private void handleFabClick() {
-        newItemDialogManager.showDialog(getSupportFragmentManager());
-    }
-
     private void handleDialogResult(String result) {
         LOGGER.v("[handleDialogResult]");
         if (TextUtils.isEmpty(result)) {
@@ -149,7 +147,7 @@ public class ItemListActivity extends BaseActivity {
         itemsRepository.setItem(result, new SetItemListener() {
             @Override
             public void onSuccess(Item item) {
-                handleNewItemSaved(item);
+                itemListView.addItem(item);
             }
 
             @Override
@@ -159,16 +157,9 @@ public class ItemListActivity extends BaseActivity {
         });
     }
 
-    private void handleDialogCancelled() {
-        // ok to ignore
-    }
-
-    private void initializeSignInSupport(ItemListComponent itemListComponent) {
+    private void initializeSignInSupport() {
         LOGGER.v("[initializeSignInSupport]");
-        authenticationAgent = itemListComponent.authenticationAgent();
         authenticationAgent.addListener(authenticationListener);
-
-        View signInButton = findViewById(R.id.item_list_sign_in_button);
         signInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -176,38 +167,35 @@ public class ItemListActivity extends BaseActivity {
             }
         });
 
-        signOutOptionsMenuHandler = itemListComponent.signOutOptionsMenuHandler();
-        signOutOptionsMenuHandler.setListener(signOutMenuHandlerListener);
+        signOutOptionsMenuHandler.setListener(new SignOutOptionsMenuHandler.Listener() {
+            @Override
+            public void onMenuItemSelected() {
+                authenticationAgent.deauthenticate(ItemListActivity.this);
+            }
+        });
         getOptionsMenuManager().addHandler(signOutOptionsMenuHandler);
     }
-
-    private SignOutOptionsMenuHandler.Listener signOutMenuHandlerListener = new SignOutOptionsMenuHandler.Listener() {
-        @Override
-        public void onMenuItemSelected() {
-            authenticationAgent.deauthenticate(ItemListActivity.this);
-        }
-    };
 
     private AuthenticationAgent.Listener authenticationListener = new AuthenticationAgent.Listener() {
         @Override
         public void onAuthenticationSuccess() {
             LOGGER.v("[onSignInSuccess]");
             startItemsRequest();
-            setViewState(new ViewState(ViewState.STATE_LOGGED_IN));
+            setViewState(new ViewState(ViewState.LOGGED_IN));
             Toast.makeText(ItemListActivity.this, "Login Successful", Toast.LENGTH_LONG).show();
         }
 
         @Override
         public void onAuthenticationFailed(Exception e) {
             LOGGER.e(e);
-            setViewState(new ViewState(ViewState.STATE_LOGGED_OUT));
+            setViewState(new ViewState(ViewState.LOGGED_OUT));
             Toast.makeText(ItemListActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
         }
 
         @Override
         public void onDeauthencticationSuccess() {
             startItemsRequest();
-            setViewState(new ViewState(ViewState.STATE_LOGGED_OUT));
+            setViewState(new ViewState(ViewState.LOGGED_OUT));
             Toast.makeText(ItemListActivity.this, "Logout Successful", Toast.LENGTH_LONG).show();
         }
 
@@ -219,22 +207,26 @@ public class ItemListActivity extends BaseActivity {
     };
 
     private static class ViewState {
-        public final int state;
-        public static final int STATE_LOGGED_IN = 0;
-        public static final int STATE_LOGGED_OUT = 1;
+        private final int type;
+        public static final int LOGGED_IN = 0;
+        public static final int LOGGED_OUT = 1;
 
-        public ViewState(int state) {
-            this.state = state;
+        public ViewState(int type) {
+            this.type = type;
+        }
+
+        public int getType() {
+            return type;
         }
     }
 
     public void setViewState(ViewState state) {
-        switch (state.state) {
-            case ViewState.STATE_LOGGED_IN:
+        switch (state.getType()) {
+            case ViewState.LOGGED_IN:
                 signInButtonContainer.setVisibility(View.GONE);
                 signOutOptionsMenuHandler.setShowOptionsItem(true);
                 break;
-            case ViewState.STATE_LOGGED_OUT:
+            case ViewState.LOGGED_OUT:
                 signInButtonContainer.setVisibility(View.VISIBLE);
                 signOutOptionsMenuHandler.setShowOptionsItem(false);
                 break;

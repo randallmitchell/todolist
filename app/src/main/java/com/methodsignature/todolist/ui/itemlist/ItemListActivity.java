@@ -8,8 +8,7 @@ import android.widget.Toast;
 import com.google.common.collect.ImmutableList;
 import com.methodsignature.todolist.R;
 import com.methodsignature.todolist.activity.BaseActivity;
-import com.methodsignature.todolist.application.TodoListApplication;
-import com.methodsignature.todolist.application.ioc.ApplicationComponent;
+import com.methodsignature.todolist.application.ioc.ComponentsProvider;
 import com.methodsignature.todolist.authentication.AuthenticationAgent;
 import com.methodsignature.todolist.authentication.menu.SignOutOptionsMenuHandler;
 import com.methodsignature.todolist.data.Item;
@@ -19,7 +18,8 @@ import com.methodsignature.todolist.repository.exception.SetItemException;
 import com.methodsignature.todolist.repository.listener.ItemsListener;
 import com.methodsignature.todolist.repository.listener.SetItemListener;
 import com.methodsignature.todolist.ui.itementry.NewItemDialogManager;
-import com.methodsignature.todolist.ui.itementry.NewItemDialogModule;
+import com.methodsignature.todolist.ui.itemlist.ioc.ItemListComponent;
+import com.methodsignature.todolist.ui.itemlist.ioc.ItemListComponentProvider;
 import com.methodsignature.todolist.utility.Logger;
 
 import java.util.List;
@@ -61,12 +61,10 @@ public class ItemListActivity extends BaseActivity {
     }
 
     public void resolveDependencies() {
-        ApplicationComponent applicationComponent =
-                ((TodoListApplication) getApplication()).getApplicationComponent();
-        ItemListComponent itemListComponent = DaggerItemListComponent.builder()
-                .applicationComponent(applicationComponent)
-                .newItemDialogModule(new NewItemDialogModule())
-                .build();
+
+        ItemListComponentProvider provider = (ItemListComponentProvider)
+                ComponentsProvider.getInstance().provide(ItemListComponentProvider.class);
+        ItemListComponent itemListComponent = provider.provideItemListComponent();
 
         itemsRepository = itemListComponent.itemsRepository();
         authenticationAgent = itemListComponent.authenticationAgent();
@@ -194,6 +192,7 @@ public class ItemListActivity extends BaseActivity {
 
         @Override
         public void onDeauthencticationSuccess() {
+            LOGGER.v("[onDeauthencticationSuccess]");
             startItemsRequest();
             setViewState(new ViewState(ViewState.LOGGED_OUT));
             Toast.makeText(ItemListActivity.this, "Logout Successful", Toast.LENGTH_LONG).show();

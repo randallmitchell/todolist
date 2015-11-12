@@ -1,4 +1,4 @@
-package com.methodsignature.todolist.ui.itemlist;
+package com.methodsignature.todolist.ui.itemlist.ioc;
 
 import com.methodsignature.todolist.application.ioc.ApplicationComponent;
 import com.methodsignature.todolist.authentication.AuthenticationAgent;

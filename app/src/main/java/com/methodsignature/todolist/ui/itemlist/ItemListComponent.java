@@ -10,24 +10,19 @@ import com.methodsignature.todolist.ui.itementry.NewItemDialogManager;
 import com.methodsignature.todolist.ui.itementry.NewItemDialogModule;
 
 import dagger.Component;
+import dagger.Subcomponent;
 
 /**
  * Created by randallmitchell on 11/4/15.
  */
-@Component(
-        dependencies = {
-                ApplicationComponent.class
-        },
+@Subcomponent(
         modules = {
                 NewItemDialogModule.class,
                 AuthenticationMenuModule.class
         }
-
 )
 @ActivityScope
 public interface ItemListComponent {
     NewItemDialogManager itemDialogManager();
-    AuthenticationAgent authenticationAgent();
     SignOutOptionsMenuHandler signOutOptionsMenuHandler();
-    ItemsRepository itemsRepository();
 }

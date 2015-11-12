@@ -12,6 +12,7 @@ import com.methodsignature.todolist.application.TodoListApplication;
 import com.methodsignature.todolist.application.ioc.ApplicationComponent;
 import com.methodsignature.todolist.authentication.AuthenticationAgent;
 import com.methodsignature.todolist.authentication.menu.SignOutOptionsMenuHandler;
+import com.methodsignature.todolist.authentication.menu.ioc.AuthenticationMenuModule;
 import com.methodsignature.todolist.data.Item;
 import com.methodsignature.todolist.repository.ItemsRepository;
 import com.methodsignature.todolist.repository.exception.ItemsException;
@@ -63,13 +64,12 @@ public class ItemListActivity extends BaseActivity {
     public void resolveDependencies() {
         ApplicationComponent applicationComponent =
                 ((TodoListApplication) getApplication()).getApplicationComponent();
-        ItemListComponent itemListComponent = DaggerItemListComponent.builder()
-                .applicationComponent(applicationComponent)
-                .newItemDialogModule(new NewItemDialogModule())
-                .build();
+        ItemListComponent itemListComponent = applicationComponent
+                .itemListComponent(new NewItemDialogModule(), new AuthenticationMenuModule());
 
-        itemsRepository = itemListComponent.itemsRepository();
-        authenticationAgent = itemListComponent.authenticationAgent();
+
+        itemsRepository = applicationComponent.itemsRepository();
+        authenticationAgent = applicationComponent.authenticationAgent();
         signOutOptionsMenuHandler = itemListComponent.signOutOptionsMenuHandler();
         newItemDialogManager = itemListComponent.itemDialogManager();
     }

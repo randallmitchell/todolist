@@ -1,5 +1,7 @@
 package com.methodsignature.todolist.ui.itemlist;
 
+import android.app.Activity;
+
 import com.methodsignature.todolist.application.ioc.ApplicationComponent;
 import com.methodsignature.todolist.authentication.AuthenticationAgent;
 import com.methodsignature.todolist.authentication.menu.SignOutOptionsMenuHandler;
@@ -30,4 +32,6 @@ public interface ItemListComponent {
     AuthenticationAgent authenticationAgent();
     SignOutOptionsMenuHandler signOutOptionsMenuHandler();
     ItemsRepository itemsRepository();
+
+    void inject(ItemListActivity activity);
 }

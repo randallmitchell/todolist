@@ -24,6 +24,8 @@ import com.methodsignature.todolist.utility.Logger;
 
 import java.util.List;
 
+import javax.inject.Inject;
+
 /**
  * Created by randallmitchell on 11/2/15.
  */
@@ -31,17 +33,21 @@ public class ItemListActivity extends BaseActivity {
 
     private static final Logger LOGGER = new Logger(ItemListActivity.class);
 
-    private ItemsRepository itemsRepository;
+    @Inject
+    ItemsRepository itemsRepository;
 
     private ItemListView itemListView;
     private View signInButton;
 
-    private NewItemDialogManager newItemDialogManager;
+    @Inject
+    NewItemDialogManager newItemDialogManager;
 
+    @Inject
+    SignOutOptionsMenuHandler signOutOptionsMenuHandler;
     private View signInButtonContainer;
-    private SignOutOptionsMenuHandler signOutOptionsMenuHandler;
 
-    private AuthenticationAgent authenticationAgent;
+    @Inject
+    AuthenticationAgent authenticationAgent;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -67,11 +73,7 @@ public class ItemListActivity extends BaseActivity {
                 .applicationComponent(applicationComponent)
                 .newItemDialogModule(new NewItemDialogModule())
                 .build();
-
-        itemsRepository = itemListComponent.itemsRepository();
-        authenticationAgent = itemListComponent.authenticationAgent();
-        signOutOptionsMenuHandler = itemListComponent.signOutOptionsMenuHandler();
-        newItemDialogManager = itemListComponent.itemDialogManager();
+        itemListComponent.inject(this);
     }
 
     @Override

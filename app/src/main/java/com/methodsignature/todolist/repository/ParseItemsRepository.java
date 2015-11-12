@@ -35,6 +35,7 @@ import java.util.List;
 // FIXME reliance on runnable null state is functionally incorrect.
 public class ParseItemsRepository implements ItemsRepository {
 
+
     private final List<Item> items = Collections.synchronizedList(new ArrayList<Item>());
 
     private final Handler handler = new Handler();

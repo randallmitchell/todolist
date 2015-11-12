@@ -1,5 +1,7 @@
 package com.methodsignature.todolist.application.ioc;
 
+import android.app.Activity;
+
 import com.methodsignature.todolist.authentication.AuthenticationAgent;
 import com.methodsignature.todolist.authentication.ioc.AuthenticationModule;
 import com.methodsignature.todolist.authentication.menu.ioc.AuthenticationMenuModule;

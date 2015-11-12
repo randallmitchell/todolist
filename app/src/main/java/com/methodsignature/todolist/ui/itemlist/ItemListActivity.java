@@ -5,26 +5,21 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.Toast;
 
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.SignInButton;
-import com.google.android.gms.common.api.Status;
 import com.google.common.collect.ImmutableList;
 import com.methodsignature.todolist.R;
 import com.methodsignature.todolist.activity.BaseActivity;
 import com.methodsignature.todolist.application.TodoListApplication;
-import com.methodsignature.todolist.authentication.SignOutOptionsMenuHandler;
+import com.methodsignature.todolist.application.ioc.ApplicationComponent;
+import com.methodsignature.todolist.authentication.AuthenticationAgent;
+import com.methodsignature.todolist.authentication.menu.SignOutOptionsMenuHandler;
 import com.methodsignature.todolist.data.Item;
-import com.methodsignature.todolist.google.signin.GoogleAuthenticationHelper;
-import com.methodsignature.todolist.google.signin.ioc.DaggerGoogleSignInComponent;
-import com.methodsignature.todolist.google.signin.ioc.GoogleSignInComponent;
-import com.methodsignature.todolist.google.signin.ioc.GoogleSignInModule;
 import com.methodsignature.todolist.repository.ItemsRepository;
 import com.methodsignature.todolist.repository.exception.ItemsException;
 import com.methodsignature.todolist.repository.exception.SetItemException;
 import com.methodsignature.todolist.repository.listener.ItemsListener;
 import com.methodsignature.todolist.repository.listener.SetItemListener;
 import com.methodsignature.todolist.ui.itementry.NewItemDialogManager;
+import com.methodsignature.todolist.ui.itementry.NewItemDialogModule;
 import com.methodsignature.todolist.utility.Logger;
 
 import java.util.List;
@@ -32,13 +27,9 @@ import java.util.List;
 /**
  * Created by randallmitchell on 11/2/15.
  */
-// FIXME this activity has memory leak.
-// CONCERN consider abstracting play services further out of the UI layer.
 public class ItemListActivity extends BaseActivity {
 
     private static final Logger LOGGER = new Logger(ItemListActivity.class);
-
-    private static final int ACTIVITY_RESULT_CODE_SIGN_IN = 0;
 
     ItemListComponent itemListComponent;
 
@@ -48,10 +39,10 @@ public class ItemListActivity extends BaseActivity {
 
     private NewItemDialogManager newItemDialogManager;
 
-    private GoogleAuthenticationHelper googleAuthenticationHelper;
-
-    private View googleSignInButtonContainer;
+    private View signInButtonContainer;
     private SignOutOptionsMenuHandler signOutOptionsMenuHandler;
+
+    private AuthenticationAgent authenticationAgent;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -60,18 +51,19 @@ public class ItemListActivity extends BaseActivity {
 
         setContentView(R.layout.item_list_activity);
         itemListView = (ItemListView) findViewById(R.id.item_list_list_view);
-        googleSignInButtonContainer = findViewById(R.id.item_list_google_sign_in_button_container);
+        signInButtonContainer = findViewById(R.id.item_list_sign_in_button_container);
 
         TodoListApplication app = (TodoListApplication) getApplication();
-        itemsRepository = app.getApplicationComponent().itemsRepository();
+        ApplicationComponent applicationComponent = app.getApplicationComponent();
+        itemsRepository = applicationComponent.itemsRepository();
 
-        itemListComponent = DaggerItemListComponent.create();
+        itemListComponent = DaggerItemListComponent.builder()
+            .applicationComponent(applicationComponent)
+            .newItemDialogModule(new NewItemDialogModule())
+            .build();
         initializeNewItemSupport(itemListComponent);
 
-        GoogleSignInComponent daggerGoogleSignInComponent = DaggerGoogleSignInComponent.builder()
-                .googleSignInModule(new GoogleSignInModule())
-                .build();
-        initializeGoogleSignInSupport(daggerGoogleSignInComponent);
+        initializeSignInSupport(itemListComponent);
     }
 
     @Override
@@ -79,19 +71,21 @@ public class ItemListActivity extends BaseActivity {
         LOGGER.v("[onStart]");
         super.onStart();
         startItemsRequest();
-        if (googleAuthenticationHelper.getUserWasSignedIn(this)) {
-            LOGGER.v("[getUserWasSignedIn] attempting auto sign in.");
-            googleAuthenticationHelper.tryToAutoSignIn(this);
+        if (authenticationAgent.shouldAutoLogin(this)) {
+            authenticationAgent.authenticate(this);
         } else {
-            LOGGER.v("[getUserWasSignedIn] displaying login button.");
-            setViewState(new ViewState(ViewState.STATE_LOGGED_OUT));
+            if (authenticationAgent.isAuthenticated()) {
+                setViewState(new ViewState(ViewState.STATE_LOGGED_IN));
+            } else {
+                setViewState(new ViewState(ViewState.STATE_LOGGED_OUT));
+            }
         }
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        googleAuthenticationHelper.releaseActivity(this);
+        authenticationAgent.removeListener(authenticationListener);
     }
 
     private void handleItems(List<Item> allItems) {
@@ -100,7 +94,7 @@ public class ItemListActivity extends BaseActivity {
 
     private void initializeNewItemSupport(ItemListComponent itemListComponent) {
         LOGGER.v("[initializeNewItemSupport]");
-        newItemDialogManager = itemListComponent.newItemDialogManager();
+        newItemDialogManager = itemListComponent.itemDialogManager();
         newItemDialogManager.setListener(new NewItemDialogManager.Listener() {
             @Override
             public void onDialogResult(String newItemText) {
@@ -169,25 +163,20 @@ public class ItemListActivity extends BaseActivity {
         // ok to ignore
     }
 
-    private void initializeGoogleSignInSupport(GoogleSignInComponent googleSignInComponent) {
-        LOGGER.v("[initializeGoogleSignInSupport]");
-        googleAuthenticationHelper = googleSignInComponent.googleSignInHelper();
-        signOutOptionsMenuHandler = itemListComponent.signOutOptionsMenuHandler();
+    private void initializeSignInSupport(ItemListComponent itemListComponent) {
+        LOGGER.v("[initializeSignInSupport]");
+        authenticationAgent = itemListComponent.authenticationAgent();
+        authenticationAgent.addListener(authenticationListener);
 
-        googleAuthenticationHelper.setListener(googleSignInHelperListener);
-        googleAuthenticationHelper.setRequestCode(ACTIVITY_RESULT_CODE_SIGN_IN);
-        getActivityResultManager().registerHandler(googleAuthenticationHelper);
-
-        SignInButton signInButton = (SignInButton) findViewById(R.id.item_list_google_sign_in_button);
-        signInButton.setScopes(googleAuthenticationHelper.getSignInScopes());
+        View signInButton = findViewById(R.id.item_list_sign_in_button);
         signInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // FIXME this should be pushed to a background thread.
-                googleAuthenticationHelper.startSignIn(ItemListActivity.this);
+                authenticationAgent.authenticate(ItemListActivity.this);
             }
         });
 
+        signOutOptionsMenuHandler = itemListComponent.signOutOptionsMenuHandler();
         signOutOptionsMenuHandler.setListener(signOutMenuHandlerListener);
         getOptionsMenuManager().addHandler(signOutOptionsMenuHandler);
     }
@@ -195,35 +184,37 @@ public class ItemListActivity extends BaseActivity {
     private SignOutOptionsMenuHandler.Listener signOutMenuHandlerListener = new SignOutOptionsMenuHandler.Listener() {
         @Override
         public void onMenuItemSelected() {
-            googleAuthenticationHelper.startSignOut(ItemListActivity.this);
+            authenticationAgent.deauthenticate(ItemListActivity.this);
         }
     };
 
-    private GoogleAuthenticationHelper.Listener googleSignInHelperListener = new GoogleAuthenticationHelper.Listener() {
+    private AuthenticationAgent.Listener authenticationListener = new AuthenticationAgent.Listener() {
         @Override
-        public void onConnectionFailure(ConnectionResult result) {
-            LOGGER.v("[onConnectionFailure]");
-            // TODO handle connection failure
-            Toast.makeText(ItemListActivity.this, "Failed to connect to Google.", Toast.LENGTH_LONG).show();
-        }
-
-        @Override
-        public void onSignInFailed(Status status) {
-            LOGGER.v("[onSignInFailed]");
-            // TODO handle sign in failure
-            Toast.makeText(ItemListActivity.this, "Failed to sign in to Google.", Toast.LENGTH_LONG).show();
-        }
-
-        @Override
-        public void onSignInSuccess(GoogleSignInAccount account) {
+        public void onAuthenticationSuccess() {
             LOGGER.v("[onSignInSuccess]");
+            startItemsRequest();
             setViewState(new ViewState(ViewState.STATE_LOGGED_IN));
+            Toast.makeText(ItemListActivity.this, "Login Successful", Toast.LENGTH_LONG).show();
         }
 
         @Override
-        public void onSignOutResult(Status status) {
-            LOGGER.v("[onSignOutResult]");
+        public void onAuthenticationFailed(Exception e) {
+            LOGGER.e(e);
             setViewState(new ViewState(ViewState.STATE_LOGGED_OUT));
+            Toast.makeText(ItemListActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+
+        @Override
+        public void onDeauthencticationSuccess() {
+            startItemsRequest();
+            setViewState(new ViewState(ViewState.STATE_LOGGED_OUT));
+            Toast.makeText(ItemListActivity.this, "Logout Successful", Toast.LENGTH_LONG).show();
+        }
+
+        @Override
+        public void onDeauthenticationFailed(Exception e) {
+            LOGGER.e(e);
+            Toast.makeText(ItemListActivity.this, e.toString(), Toast.LENGTH_LONG).show();
         }
     };
 
@@ -240,11 +231,11 @@ public class ItemListActivity extends BaseActivity {
     public void setViewState(ViewState state) {
         switch (state.state) {
             case ViewState.STATE_LOGGED_IN:
-                googleSignInButtonContainer.setVisibility(View.GONE);
+                signInButtonContainer.setVisibility(View.GONE);
                 signOutOptionsMenuHandler.setShowOptionsItem(true);
                 break;
             case ViewState.STATE_LOGGED_OUT:
-                googleSignInButtonContainer.setVisibility(View.VISIBLE);
+                signInButtonContainer.setVisibility(View.VISIBLE);
                 signOutOptionsMenuHandler.setShowOptionsItem(false);
                 break;
         }

@@ -1,4 +1,4 @@
-package com.methodsignature.todolist.authentication;
+package com.methodsignature.todolist.authentication.menu;
 
 import android.support.v4.view.MenuItemCompat;
 import android.view.Menu;

@@ -7,4 +7,5 @@
     <string name="new_item_dialog_negative_button">Cancel</string>
 
     <string name="menu_item_sign_out">Sign Out</string>
+    <string name="item_list_sign_in_button_text">Sign-In with Twitter</string>
 </resources>

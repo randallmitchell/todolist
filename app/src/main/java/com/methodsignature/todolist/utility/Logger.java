@@ -45,9 +45,9 @@ public class Logger {
         }
     }
 
-    public void w(Throwable throwable) {
+    public void e(Throwable throwable) {
         if (!disabled) {
-            Log.w(tag, throwable);
+            Log.e(tag, throwable.getMessage(),throwable);
         }
     }
 

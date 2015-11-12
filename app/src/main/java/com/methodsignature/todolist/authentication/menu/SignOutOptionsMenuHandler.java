@@ -1,4 +1,4 @@
-package com.methodsignature.todolist.authentication;
+package com.methodsignature.todolist.authentication.menu;
 
 import com.methodsignature.todolist.activity.menu.OptionsMenuHandler;
 

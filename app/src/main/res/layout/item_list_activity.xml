@@ -9,7 +9,7 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/item_list_google_sign_in_button_container">
+        android:layout_above="@+id/item_list_sign_in_button_container">
 
         <com.methodsignature.todolist.ui.itemlist.ItemListView
             android:id="@+id/item_list_list_view"
@@ -33,7 +33,7 @@
     </FrameLayout>
 
     <FrameLayout
-        android:id="@id/item_list_google_sign_in_button_container"
+        android:id="@id/item_list_sign_in_button_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
@@ -44,10 +44,11 @@
         android:visibility="gone"
         style="@style/Overlay">
 
-        <com.google.android.gms.common.SignInButton
-            android:id="@+id/item_list_google_sign_in_button"
-            android:layout_gravity="center_horizontal"
+        <android.support.v7.widget.AppCompatButton
+            android:id="@+id/item_list_sign_in_button"
+            android:text="@string/item_list_sign_in_button_text"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"/>
     </FrameLayout>
 </RelativeLayout>

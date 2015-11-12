@@ -1,7 +1,9 @@
 package com.methodsignature.todolist.ui.itemlist;
 
-import com.methodsignature.todolist.authentication.SignOutOptionsMenuHandler;
-import com.methodsignature.todolist.authentication.ioc.SignOutAuthenticationModule;
+import com.methodsignature.todolist.application.ioc.ApplicationComponent;
+import com.methodsignature.todolist.authentication.AuthenticationAgent;
+import com.methodsignature.todolist.authentication.menu.SignOutOptionsMenuHandler;
+import com.methodsignature.todolist.authentication.menu.ioc.AuthenticationMenuModule;
 import com.methodsignature.todolist.scopes.ActivityScope;
 import com.methodsignature.todolist.ui.itementry.NewItemDialogManager;
 import com.methodsignature.todolist.ui.itementry.NewItemDialogModule;
@@ -12,13 +14,18 @@ import dagger.Component;
  * Created by randallmitchell on 11/4/15.
  */
 @Component(
+        dependencies = {
+                ApplicationComponent.class
+        },
         modules = {
                 NewItemDialogModule.class,
-                SignOutAuthenticationModule.class
+                AuthenticationMenuModule.class
         }
+
 )
 @ActivityScope
 public interface ItemListComponent {
-    NewItemDialogManager newItemDialogManager();
+    NewItemDialogManager itemDialogManager();
+    AuthenticationAgent authenticationAgent();
     SignOutOptionsMenuHandler signOutOptionsMenuHandler();
 }

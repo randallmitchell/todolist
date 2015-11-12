@@ -7,4 +7,5 @@ import android.content.Context;
  */
 public interface ParseInitializer {
     void initialize();
+    void initializeTwitter();
 }
